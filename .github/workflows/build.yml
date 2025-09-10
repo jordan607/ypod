@@ -28,7 +28,7 @@ jobs:
           zip \
           unzip \
           openjdk-11-jdk \
-          libncurses5 \
+          libncurses6 \
           libstdc++6 \
           zlib1g-dev \
           libffi-dev \
@@ -42,24 +42,4 @@ jobs:
     - name: Install Buildozer and Cython
       run: |
         python3 -m pip install --upgrade pip
-        pip install buildozer cython
-
-    - name: Add ~/.local/bin to PATH
-      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-    - name: Set up Android SDK tools
-      run: |
-        mkdir -p ~/.android && touch ~/.android/repositories.cfg
-        buildozer android update
-        yes | buildozer android clean
-        yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-        yes | sdkmanager --licenses
-
-    - name: Build APK
-      run: buildozer android debug
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: musicplayer-apk
-        path: bin/*.apk
+        pip inst
