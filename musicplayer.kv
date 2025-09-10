@@ -1,0 +1,140 @@
+<MusicPlayerRoot>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 20
+        spacing: 10
+
+        # === Top Section: Search and Download ===
+        BoxLayout:
+            size_hint_y: None
+            height: 40
+            spacing: 10
+            
+            TextInput:
+                id: search_input
+                size_hint_x: 0.7
+                hint_text: 'Search for a song...'
+                multiline: False
+            
+            Button:
+                text: 'Download'
+                size_hint_x: 0.3
+                on_release: app.on_download(search_input.text)
+                
+            Button:
+                text: 'Load Local'
+                size_hint_x: 0.3
+                on_release: app.load_cached_songs()
+
+        # === Song Info ===
+        Label:
+            id: song_info_label
+            text: app.song_title
+            size_hint_y: None
+            height: 40
+            font_size: '20sp'
+
+        Label:
+            id: time_label
+            text: app.time_label
+            size_hint_y: None
+            height: 20
+            font_size: '12sp'
+
+        # === Progress Bar and Seeker ===
+        Slider:
+            id: progress_slider
+            min: 0
+            max: 100
+            value: app.time_progress
+            size_hint_y: None
+            height: 30
+            on_touch_up: app.seek_song(self.value)
+
+        # === Playlist with ScrollView ===
+        ScrollView:
+            size_hint_y: 1
+            RecycleView:
+                id: playlist_view
+                viewclass: 'SongListItem'
+                RecycleBoxLayout:
+                    default_size: None, dp(48)
+                    default_size_hint: 1, None
+                    size_hint_y: None
+                    height: self.minimum_height
+                    orientation: 'vertical'
+                    spacing: 5
+        
+        # === Control Buttons ===
+        BoxLayout:
+            size_hint_y: None
+            height: 60
+            spacing: 15
+
+            Button:
+                text: '|◀'
+                font_name: 'DejaVuSans'
+                font_size: '24sp'
+                on_release: app.previous_song()
+            
+            Button:
+                text: '||'
+                font_name: 'DejaVuSans'
+                font_size: '24sp'
+                on_release: app.pause_song() if app.is_playing else app.resume_song()
+            
+            Button:
+                text: '▶|'
+                font_name: 'DejaVuSans'
+                font_size: '24sp'
+                on_release: app.next_song()
+            
+            Button:
+                text: '[X]'
+                font_name: 'DejaVuSans'
+                font_size: '24sp'
+                on_release: app.remove_song()
+            
+            Button:
+                text: '[★]'
+                font_name: 'DejaVuSans'
+                font_size: '24sp'
+                on_release: app.toggle_favorite()
+
+        # === Volume Slider ===
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            spacing: 10
+            
+            Label:
+                text: 'Volume'
+                size_hint_x: 0.2
+            
+            Slider:
+                id: volume_slider
+                min: 0
+                max: 100
+                value: 70
+                size_hint_x: 0.8
+                on_value: app.change_volume(self.value)
+
+<SongListItem@BoxLayout>:
+    text: ''
+    index: -1
+    canvas.before:
+        Color:
+            rgba: 0.2, 0.2, 0.2, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    Label:
+        text: root.text
+        text_size: self.size
+        valign: 'middle'
+        halign: 'left'
+        padding_x: 10
+    Button:
+        size_hint_x: 0.2
+        text: 'Play'
+        on_release: app.on_song_press(root.index)
