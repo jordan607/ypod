@@ -16,9 +16,9 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.10
+        python-version: "3.10"
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt update
         sudo apt install -y \
@@ -36,25 +36,27 @@ jobs:
           libsqlite3-dev \
           libjpeg-dev \
           clang \
-          ccache
+          ccache \
+          curl
 
+    - name: Install Buildozer and Cython
+      run: |
         python3 -m pip install --upgrade pip
-        pip install --user buildozer cython
+        pip install buildozer cython
 
     - name: Add ~/.local/bin to PATH
       run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Install Android SDK Build Tools
+    - name: Set up Android SDK tools
       run: |
+        mkdir -p ~/.android && touch ~/.android/repositories.cfg
+        buildozer android update
+        yes | buildozer android clean
         yes | sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
         yes | sdkmanager --licenses
 
-    - name: Initialize Buildozer (first run will generate buildozer.spec)
-      run: buildozer init || true
-
     - name: Build APK
-      run: |
-        buildozer android debug
+      run: buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
