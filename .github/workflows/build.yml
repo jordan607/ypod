@@ -77,22 +77,6 @@ jobs:
           "build-tools;33.0.2" \
           "ndk;25.1.8937393"
           
-    - name: Fix outdated SDK path assumption in python-for-android
-      run: |
-        # Wait for p4a to be cloned by buildozer
-        sleep 30
-        # Check if p4a directory exists
-        if [ -d "$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android" ]; then
-          # Navigate into the p4a directory
-          cd "$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
-          
-          # Apply sed command to replace old path with new one
-          sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' pythonforandroid/toolchain.py
-        else
-          echo "python-for-android directory not found. Check buildozer output for path."
-          exit 1
-        fi
-
     - name: Initialize Buildozer (first run only)
       run: buildozer init || true
 
@@ -104,8 +88,26 @@ jobs:
         sed -i '/^\[app\]/r temp_spec_additions' buildozer.spec
         rm temp_spec_additions
 
-    - name: Build APK
-      run: buildozer android debug
+    - name: Build APK with path fix
+      run: |
+        # Create a shell script to fix the path assumption
+        cat << 'EOF' > fix_path.sh
+        #!/bin/bash
+        p4a_dir="$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
+        if [ -d "$p4a_dir" ]; then
+          echo "Fixing sdkmanager path in python-for-android..."
+          sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' "$p4a_dir/pythonforandroid/toolchain.py"
+        else
+          echo "python-for-android directory not found."
+          exit 1
+        fi
+        EOF
+
+        # Run buildozer and the script. The script must be executed before
+        # the p4a build step, which buildozer does internally.
+        buildozer android debug || {
+            ./fix_path.sh && buildozer android debug
+        }
 
     - name: Show APK path
       run: ls -l bin || echo "No APK generated"
