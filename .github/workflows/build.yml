@@ -52,9 +52,9 @@ jobs:
       run: |
         mkdir -p "$HOME/android-sdk"
         curl -o "$HOME/commandlinetools.zip" https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q -d "$HOME/android-sdk" "$HOME/commandlinetools.zip"
-        mv "$HOME/android-sdk/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
+        unzip -q -d "$HOME/android-sdk/cmdline-tools" "$HOME/commandlinetools.zip" # Extract directly into 'cmdline-tools'
         rm "$HOME/commandlinetools.zip"
+        mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest" # Move the extracted folder into 'latest'
         mkdir -p "$HOME/.android"
         touch "$HOME/.android/repositories.cfg"
 
