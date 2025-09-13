@@ -14,10 +14,14 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Build APK using Buildozer Docker image
-      uses: ArtemSBulgakov/buildozer-action@v1.0.0
+      uses: ArtemSBulgakov/buildozer-action@master
       id: buildozer
       with:
         command: buildozer android debug
+        cache-key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+        cache-restore-keys: |
+          buildozer-${{ runner.os }}-
+          buildozer-
         
     - name: Show APK path
       run: ls -l bin || echo "No APK generated"
