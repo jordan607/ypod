@@ -90,21 +90,21 @@ jobs:
 
     - name: Build APK with path fix
       run: |
-        # Create a shell script to fix the path assumption
         cat << 'EOF' > fix_path.sh
         #!/bin/bash
         p4a_dir="$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
         if [ -d "$p4a_dir" ]; then
           echo "Fixing sdkmanager path in python-for-android..."
           sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' "$p4a_dir/pythonforandroid/toolchain.py"
+          exit 0
         else
           echo "python-for-android directory not found."
           exit 1
         fi
         EOF
 
-        # Run buildozer and the script. The script must be executed before
-        # the p4a build step, which buildozer does internally.
+        chmod +x fix_path.sh
+
         buildozer android debug || {
             ./fix_path.sh && buildozer android debug
         }
