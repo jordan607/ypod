@@ -82,10 +82,17 @@ jobs:
 
     - name: Configure Buildozer to use system SDK
       run: |
-        sed -i 's#^#android.sdk_path = '"$ANDROID_HOME"'#g' buildozer.spec
-        sed -i 's#^#android.ndk_path = '"$ANDROID_SDK_ROOT"'/ndk/25.1.8937393#g' buildozer.spec
-        sed -i 's#^#android.accept_sdk_license = True#g' buildozer.spec
+        # Use a temporary file to hold the new settings and then prepend it
+        echo "android.accept_sdk_license = True" > temp_spec_additions
+        echo "android.sdk_path = $ANDROID_HOME" >> temp_spec_additions
+        echo "android.ndk_path = $ANDROID_SDK_ROOT/ndk/25.1.8937393" >> temp_spec_additions
         
+        # Insert the new settings under the [app] section
+        sed -i '/^\[app\]/r temp_spec_additions' buildozer.spec
+        
+        # Clean up temporary file
+        rm temp_spec_additions
+
     - name: Build APK
       run: buildozer android debug
 
