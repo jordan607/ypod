@@ -38,7 +38,7 @@ jobs:
           clang \
           ccache \
           curl \
-          libncurses-dev # Required for some older ndk versions
+          libncurses-dev
 
     - name: Install Buildozer and Cython
       run: |
@@ -52,9 +52,9 @@ jobs:
       run: |
         mkdir -p "$HOME/android-sdk"
         curl -o "$HOME/commandlinetools.zip" https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q -d "$HOME/android-sdk/cmdline-tools" "$HOME/commandlinetools.zip" # Extract directly into 'cmdline-tools'
+        unzip -q -d "$HOME/android-sdk/cmdline-tools" "$HOME/commandlinetools.zip"
         rm "$HOME/commandlinetools.zip"
-        mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest" # Move the extracted folder into 'latest'
+        mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
         mkdir -p "$HOME/.android"
         touch "$HOME/.android/repositories.cfg"
 
@@ -62,7 +62,6 @@ jobs:
       run: |
         echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "ANDROIDNDK=$HOME/android-ndk-r25b" >> $GITHUB_ENV
         echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
@@ -72,15 +71,21 @@ jobs:
     
     - name: Install SDK components
       run: |
-        sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.1.8937393"
-        
-    - name: Link NDK manually
-      run: |
-        ln -s "$ANDROID_SDK_ROOT/ndk/25.1.8937393" "$ANDROIDNDK"          
+        sdkmanager --sdk_root=$ANDROID_HOME \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.2" \
+          "ndk;25.1.8937393"
           
-    - name: Initialize Buildozer (optional, only if buildozer.spec is missing)
+    - name: Initialize Buildozer (first run only)
       run: buildozer init || true
 
+    - name: Configure Buildozer to use system SDK
+      run: |
+        sed -i 's#^#android.sdk_path = '"$ANDROID_HOME"'#g' buildozer.spec
+        sed -i 's#^#android.ndk_path = '"$ANDROID_SDK_ROOT"'/ndk/25.1.8937393#g' buildozer.spec
+        sed -i 's#^#android.accept_sdk_license = True#g' buildozer.spec
+        
     - name: Build APK
       run: buildozer android debug
 
