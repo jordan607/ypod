@@ -31,7 +31,7 @@ p4a.bootstrap = sdl2
 android.allow_backup = True
 
 log_level = 2
-warn_on_root = 1
+warn_on_root = 0
 
 # bin_dir is optional; uncomment if your APK appears elsewhere
 # bin_dir = ./bin
