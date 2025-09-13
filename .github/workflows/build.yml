@@ -13,99 +13,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Build APK using Buildozer Docker image
+      uses: ArtemSBulgakov/buildozer-action@v1
+      id: buildozer
       with:
-        python-version: "3.10"
-
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y \
-          python3-pip \
-          build-essential \
-          git \
-          zip \
-          unzip \
-          openjdk-17-jdk \
-          libncurses6 \
-          libstdc++6 \
-          zlib1g-dev \
-          libffi-dev \
-          libssl-dev \
-          libsqlite3-dev \
-          libjpeg-dev \
-          clang \
-          ccache \
-          curl \
-          libncurses-dev
-
-    - name: Install Buildozer and Cython
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install --user buildozer cython
-
-    - name: Add ~/.local/bin to PATH
-      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-      
-    - name: Install Android SDK Command-Line Tools
-      run: |
-        mkdir -p "$HOME/android-sdk"
-        curl -o "$HOME/commandlinetools.zip" https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q -d "$HOME/android-sdk/cmdline-tools" "$HOME/commandlinetools.zip"
-        rm "$HOME/commandlinetools.zip"
-        mv "$HOME/android-sdk/cmdline-tools/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
-        mkdir -p "$HOME/.android"
-        touch "$HOME/.android/repositories.cfg"
-
-    - name: Set environment variables and update PATH
-      run: |
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-
-    - name: Accept Android SDK licenses
-      run: |
-        yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses
-    
-    - name: Install SDK components
-      run: |
-        sdkmanager --sdk_root=$ANDROID_HOME \
-          "platform-tools" \
-          "platforms;android-33" \
-          "build-tools;33.0.2" \
-          "ndk;25.1.8937393"
-          
-    - name: Initialize Buildozer (first run only)
-      run: buildozer init || true
-
-    - name: Configure Buildozer to use system SDK
-      run: |
-        echo "android.accept_sdk_license = True" > temp_spec_additions
-        echo "android.sdk_path = $ANDROID_HOME" >> temp_spec_additions
-        echo "android.ndk_path = $ANDROID_SDK_ROOT/ndk/25.1.8937393" >> temp_spec_additions
-        sed -i '/^\[app\]/r temp_spec_additions' buildozer.spec
-        rm temp_spec_additions
-
-    - name: Build APK with path fix
-      run: |
-        # Use a single, integrated command to run buildozer and fix the path assumption
-        # The `||` operator ensures the fix is applied only if the first attempt fails
-        # The `--log-level 2` gives more detailed logs
-        buildozer android debug --log-level 2 || (
-          p4a_dir="$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
-          if [ -d "$p4a_dir" ]; then
-            echo "Attempting to fix sdkmanager path in python-for-android..."
-            sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' "$p4a_dir/pythonforandroid/toolchain.py"
-            echo "Retrying buildozer after path fix..."
-            buildozer android debug --log-level 2
-          else
-            echo "python-for-android directory not found during retry. Exiting."
-            exit 1
-          fi
-        )
-
+        command: buildozer android debug
+        # Optionally, you can set the cache key for faster builds
+        # cache_key: ${{ runner.os }}-buildozer-v1
+        
     - name: Show APK path
       run: ls -l bin || echo "No APK generated"
 
