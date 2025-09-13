@@ -27,7 +27,7 @@ jobs:
           git \
           zip \
           unzip \
-          openjdk-11-jdk \
+          openjdk-17-jdk \
           libncurses6 \
           libstdc++6 \
           zlib1g-dev \
@@ -37,7 +37,8 @@ jobs:
           libjpeg-dev \
           clang \
           ccache \
-          curl
+          curl \
+          libncurses-dev # Required for some older ndk versions
 
     - name: Install Buildozer and Cython
       run: |
@@ -49,12 +50,11 @@ jobs:
       
     - name: Install Android SDK Command-Line Tools
       run: |
-        mkdir -p "$HOME/android-sdk/cmdline-tools"
-        cd "$HOME/android-sdk/cmdline-tools"
-        curl -O https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q commandlinetools-linux-*.zip
-        rm commandlinetools-linux-*.zip
-        mv cmdline-tools latest
+        mkdir -p "$HOME/android-sdk"
+        curl -o "$HOME/commandlinetools.zip" https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip -q -d "$HOME/android-sdk" "$HOME/commandlinetools.zip"
+        mv "$HOME/android-sdk/cmdline-tools" "$HOME/android-sdk/cmdline-tools/latest"
+        rm "$HOME/commandlinetools.zip"
         mkdir -p "$HOME/.android"
         touch "$HOME/.android/repositories.cfg"
 
@@ -66,20 +66,19 @@ jobs:
         echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
         echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
+    - name: Accept Android SDK licenses
+      run: |
+        yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses
+    
     - name: Install SDK components
       run: |
-        sdkmanager --sdk_root=$HOME/android-sdk --licenses || true
-        sdkmanager --sdk_root=$HOME/android-sdk \
-          "platform-tools" \
-          "platforms;android-33" \
-          "build-tools;33.0.2" \
-          "ndk;25.1.8937393"
-          
+        sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;25.1.8937393"
+        
     - name: Link NDK manually
       run: |
-        ln -s "$HOME/android-sdk/ndk/25.1.8937393" "$HOME/android-ndk-r25b"          
+        ln -s "$ANDROID_SDK_ROOT/ndk/25.1.8937393" "$ANDROIDNDK"          
           
-    - name: Initialize Buildozer (only needed once)
+    - name: Initialize Buildozer (optional, only if buildozer.spec is missing)
       run: buildozer init || true
 
     - name: Build APK
