@@ -46,7 +46,33 @@ jobs:
 
     - name: Add ~/.local/bin to PATH
       run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+    - name: Install Android SDK Command-Line Tools
+      run: |
+        mkdir -p "$HOME/android-sdk/cmdline-tools"
+        cd "$HOME/android-sdk/cmdline-tools"
+        curl -O https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip -q commandlinetools-linux-*.zip
+        rm commandlinetools-linux-*.zip
+        mv cmdline-tools latest
+        mkdir -p "$HOME/.android"
+        touch "$HOME/.android/repositories.cfg"
 
+    - name: Set environment variables
+      run: |
+        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
+
+    - name: Install SDK components
+      run: |
+        yes | sdkmanager --sdk_root=$HOME/android-sdk --licenses
+        sdkmanager --sdk_root=$HOME/android-sdk \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.2"
+          
     - name: Initialize Buildozer (only needed once)
       run: buildozer init || true
 
