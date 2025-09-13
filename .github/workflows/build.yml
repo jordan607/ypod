@@ -77,6 +77,22 @@ jobs:
           "build-tools;33.0.2" \
           "ndk;25.1.8937393"
           
+    - name: Fix outdated SDK path assumption in python-for-android
+      run: |
+        # Wait for p4a to be cloned by buildozer
+        sleep 30
+        # Check if p4a directory exists
+        if [ -d "$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android" ]; then
+          # Navigate into the p4a directory
+          cd "$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
+          
+          # Apply sed command to replace old path with new one
+          sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' pythonforandroid/toolchain.py
+        else
+          echo "python-for-android directory not found. Check buildozer output for path."
+          exit 1
+        fi
+
     - name: Initialize Buildozer (first run only)
       run: buildozer init || true
 
