@@ -13,9 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Build APK using Kivy Docker image
+    - name: Build APK using Kivy Docker image (force pull)
       run: |
-        docker run --privileged -v ${{ github.workspace }}:/home/user/host_project -w /home/user/host_project kivy/buildozer:2024.08.14 buildozer android debug
+        docker pull --platform=linux/amd64 kivy/buildozer:latest
+        docker run --privileged -v ${{ github.workspace }}:/home/user/host_project -w /home/user/host_project kivy/buildozer:latest buildozer android debug
         
     - name: Show APK path
       run: ls -l bin || echo "No APK generated"
