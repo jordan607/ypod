@@ -90,24 +90,21 @@ jobs:
 
     - name: Build APK with path fix
       run: |
-        cat << 'EOF' > fix_path.sh
-        #!/bin/bash
-        p4a_dir="$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
-        if [ -d "$p4a_dir" ]; then
-          echo "Fixing sdkmanager path in python-for-android..."
-          sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' "$p4a_dir/pythonforandroid/toolchain.py"
-          exit 0
-        else
-          echo "python-for-android directory not found."
-          exit 1
-        fi
-        EOF
-
-        chmod +x fix_path.sh
-
-        buildozer android debug || {
-            ./fix_path.sh && buildozer android debug
-        }
+        # Use a single, integrated command to run buildozer and fix the path assumption
+        # The `||` operator ensures the fix is applied only if the first attempt fails
+        # The `--log-level 2` gives more detailed logs
+        buildozer android debug --log-level 2 || (
+          p4a_dir="$HOME/work/ypod/ypod/.buildozer/android/platform/python-for-android"
+          if [ -d "$p4a_dir" ]; then
+            echo "Attempting to fix sdkmanager path in python-for-android..."
+            sed -i 's#tools/bin/sdkmanager#cmdline-tools/latest/bin/sdkmanager#g' "$p4a_dir/pythonforandroid/toolchain.py"
+            echo "Retrying buildozer after path fix..."
+            buildozer android debug --log-level 2
+          else
+            echo "python-for-android directory not found during retry. Exiting."
+            exit 1
+          fi
+        )
 
     - name: Show APK path
       run: ls -l bin || echo "No APK generated"
